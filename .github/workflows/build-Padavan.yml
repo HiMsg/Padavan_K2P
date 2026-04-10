@@ -7,9 +7,9 @@ on:
 env:
   REPO_URL: https://github.com/MeIsReallyBa/padavan-4.4
   REPO_BRANCH: main
-  UPLOAD_RELEASE: true
-  TNAME: RM2100
-  CONFIG_FILE: RM2100.config
+  UPLOAD_RELEASE: false
+  TNAME: K2P
+  CONFIG_FILE: K2P.config
   XRAYCONFIG_FILE: genxrayconfig.lua
   SHADOWSOCKSFILE: Shadowsocks.asp
   XRAY_FILE: xray
@@ -25,7 +25,7 @@ jobs:
     - name: UpdatePackages
       uses: awalsh128/cache-apt-pkgs-action@latest
       with:
-        packages: libtool-bin libltdl-dev gperf python3-docutils autopoint gettext zip
+        packages: libtool-bin libltdl-dev gperf python3-docutils autopoint gettext zip upx-ucl
         version: 1.0
 
     - name: Prepare environment
@@ -43,6 +43,10 @@ jobs:
 
     - name: Load custom configuration
       run: |
+        # 1. 在移动之前，先给 xray 执行权限并进行极致压缩
+        chmod +x $XRAY_FILE
+        upx --ultra --brute $XRAY_FILE || true
+        
         mv -f $CONFIG_FILE /opt/rt-n56u/trunk/configs/templates/$TNAME.config
         mv -f $XRAYCONFIG_FILE /opt/rt-n56u/trunk/user/shadowsocks/ss/genxrayconfig.lua
         mv -f $SHADOWSOCKSFILE /opt/rt-n56u/trunk/user/www/n56u_ribbon_fixed/Shadowsocks.asp
@@ -65,7 +69,7 @@ jobs:
         echo "FILE_DATE=$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
 
     - name: Upload firmware directory
-      uses: actions/upload-pages-artifact@v3
+      uses: actions/upload-artifact@v3
       if: steps.compile.outputs.status == 'success' && !cancelled()
       with:
         name: Padavan_firmware_${{ env.TNAME }}_${{ env.FILE_DATE }}

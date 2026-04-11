@@ -68,12 +68,26 @@ jobs:
         echo "status=success" >> $GITHUB_OUTPUT
         echo "FILE_DATE=$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
 
+    # 1. 新增：生成校验文件步骤
+    - name: Generate checksum files
+      if: steps.compile.outputs.status == 'success' && !cancelled()
+      run: |
+        cd /opt/rt-n56u/trunk/images
+        # 生成 MD5 校验文件
+        md5sum *.trx > md5sum.txt
+        # 建议顺便把 SHA256 也做了，更安全
+        sha256sum *.trx > sha256sum.txt
+
+    # 2. 修改：上传步骤
     - name: Upload firmware directory
       uses: actions/upload-artifact@v4
       if: steps.compile.outputs.status == 'success' && !cancelled()
       with:
         name: Padavan_firmware_${{ env.TNAME }}_${{ env.FILE_DATE }}
-        path: /opt/rt-n56u/trunk/images
+        # 使用多行语法来包含多个特定的文件
+        path: |
+          /opt/rt-n56u/trunk/images/*.trx
+          /opt/rt-n56u/trunk/images/*.txt
 
     - name: Generate release tag
       id: tag
